@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block title %}하츄핑 대시보드 | 문시크42{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/main_home.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <h2 class="section-title">👶 하츄핑 - 아동학대 조기발견 솔루션</h2>
+  <div class="section-actions">
+    <div class="gnb-right-buttons">
+      <form method="get" action="{% url 'form_view' %}">
+        <button type="submit" class="form-view-btn">단건 입력</button>
+      </form>
+      <form method="get" action="{% url 'bulk_form_view' %}">
+        <button type="submit" class="bulk-form-btn">CSV 업로드</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- 3컬럼 현황 카드 -->
+<section class="summary">
+  <div class="card"><h2>총 아동 수</h2><p id="total-kids">{{ total_kids }}명</p></div>
+  <div class="card warning"><h2>위험 의심 아동</h2><p id="danger_kids">{{ danger_kids }}명</p></div>
+  <div class="card"><h2>모델 정확도</h2><p>{{ last_report_date }}</p></div>
+</section>
+
+<!-- 예측 입력 폼 -->
+<section class="input-form-section">
+  <h2>📌 오늘의 관찰 기록</h2>
+  
+  <div class="tab-menu">
+    <button class="tab-btn active" onclick="openTab(event, 'child-info')">👶 아동 정보</button>
+    <button class="tab-btn" onclick="openTab(event, 'parent-info')">👨‍👩‍👧 보호자 정보</button>
+  </div>
+
+  <div class="input-form">
+    <form method="post" action="{% url 'home' %}">
+      {% csrf_token %}
+
+      <!-- 아동 정보 -->
+      <div id="child-info" class="tab-content active">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="id_child_name">아동 이름</label>
+            {{ form.child_name }}
+          </div>
+          <div class="form-group">
+            <label for="id_age">나이</label>
+            {{ form.age }}
+          </div>
+          <div class="form-group">
+            <label for="id_gender">성별</label>
+            {{ form.gender }}
+          </div>
+          <div class="form-group">
+            <label for="id_attendance">출결 상태</label>
+            {{ form.attendance }}
+          </div>
+          <div class="form-group">
+            <label for="id_negative_language">부정 언어 표현</label>
+            {{ form.negative_language }}
+          </div>
+          <div class="form-group">
+            <label for="id_sibling">형제자매 수</label>
+            {{ form.sibling }}
+          </div>
+          <div class="form-group">
+            <label for="id_contact_reaction">신체 접촉 반응</label>
+            {{ form.contact_reaction }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 보호자 정보 -->
+      <div id="parent-info" class="tab-content">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="id_parental_aggression">보호자 공격성</label>
+            {{ form.parental_aggression }}
+          </div>
+          <div class="form-group">
+            <label for="id_income_level">소득 수준</label>
+            {{ form.income_level }}
+          </div>
+          <div class="form-group">
+            <label for="id_emotional_state">보호자 정서 상태</label>
+            {{ form.emotional_state }}
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <button type="submit" class="submit-btn">예측하기</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- 스타일 추가 -->
+<style>
+  /* 탭 메뉴 스타일 */
+  .tab-menu {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+  }
+
+  .tab-btn {
+    background: #ddd;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin: 0 5px;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: background 0.3s;
+  }
+
+  .tab-btn.active {
+    background: #3498db;
+    color: white;
+  }
+
+  .tab-content {
+    display: none;
+    padding: 15px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  /* 폼 그리드 스타일 */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .form-group input,
+  .form-group select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  .submit-btn {
+    background: #2ecc71;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  .submit-btn:hover {
+    background: #27ae60;
+  }
+</style>
+
+<!-- 탭 전환 기능 -->
+<script>
+  function openTab(event, tabId) {
+    var i, tabContent, tabButtons;
+    
+    tabContent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabContent.length; i++) {
+      tabContent[i].style.display = "none";
+    }
+
+    tabButtons = document.getElementsByClassName("tab-btn");
+    for (i = 0; i < tabButtons.length; i++) {
+      tabButtons[i].classList.remove("active");
+    }
+
+    document.getElementById(tabId).style.display = "block";
+    event.currentTarget.classList.add("active");
+  }
+
+  // 기본으로 첫 번째 탭 열기
+  document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("child-info").style.display = "block";
+  });
+</script>
+
+<!-- 누적 테이블 -->
+<section class="table-section">
+  <div class="table-header">
+    <h2>📝 관찰 리스트</h2>
+    <form method="post" action="{% url 'reset_dashboard' %}" onsubmit="return confirm('정말 초기화하시겠습니까?');">
+      {% csrf_token %}
+      <button type="submit" class="reset-btn">🗑️ 초기화</button>
+    </form>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>날짜</th>
+        <th>아동 이름</th>
+        <th>출결</th>
+        <th>부정언어</th>
+        <th>보호자공격성</th>
+        <th>신체반응</th>
+        <th>형제수</th>
+        <th>소득</th>
+        <th>정서</th>
+        <th>위험여부</th>
+        <th>학대 가능성</th>
+        <th>신고</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for record in observation_list %}
+      <tr>
+        <td>{{ record.observation_date }}</td>
+        <td>{{ record.child_name }}</td>
+        <td>{{ record.attendance }}</td>
+        <td>{{ record.negative_language }}</td>
+        <td>{{ record.parental_aggression }}</td>
+        <td>{{ record.contact_reaction }}</td>
+        <td>{{ record.sibling }}</td>
+        <td>{{ record.income_level }}</td>
+        <td>{{ record.emotional_state }}</td>
+        <td>
+          {% if record.is_danger %}
+            <span class="danger">위험</span>
+          {% else %}
+            정상
+          {% endif %}
+        </td>
+        <td>{{ history_dict|dict_get:record.child_name }}%</td>
+        <td>신고</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

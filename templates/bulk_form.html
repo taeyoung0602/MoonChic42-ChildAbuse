@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}CSV 업로드 | 문시크42{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{% static 'css/bulk_form.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1>📂 CSV 업로드 일괄 예측</h1>
+
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label>
+      CSV 파일 업로드:
+      <input type="file" name="csv_file" accept=".csv" required>
+    </label>
+    {% if filename %}
+      <span style="margin-left: 10px; color: #555;">📄 {{ filename }}</span>
+    {% endif %}
+    <br><br>
+    <button type="submit">예측하기</button>
+  </form>
+
+  {% if results %}
+   <!-- 예측 결과 타이틀과 버튼을 나란히 배치 -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin: 30px 0 16px 0;">
+      <h2 style="margin: 0; font-size: 1.6rem;">
+        📊 예측 결과
+        {% if accuracy %}
+          <span style="font-size: 0.8em; color: gray;">
+            (정확도: {{ accuracy|floatformat:2 }}%)
+          </span>
+        {% endif %}
+      </h2>
+      <button id="download-btn" style="margin-left: auto;">파일로 저장</button>
+    </div>
+
+    <!-- ✅ 데이터 전달용 JSON 스크립트 -->
+    <script id="risk-data" type="application/json">
+      {{ results|safe }}
+    </script>
+
+    <!-- ✅ 테이블 -->
+    <table border="1">
+      <thead>
+        <tr>
+          <th>나이</th>
+          <th>성별</th>
+          <th>출석</th>
+          <th>부정 언어</th>
+          <th>보호자 공격성</th>
+          <th>신체 접촉 반응</th>
+          <th>형제자매 수</th>
+          <th>소득 수준</th>
+          <th>보호자 정서 상태</th>
+          <th>예측결과</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in results %}
+          <tr {% if row.예측결과 == "가정폭력 위험이 있습니다" %} style="background-color: #ffe6ea;" {% endif %}>
+            {% for value in row.values %}
+              <td>{{ value }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- ✅ 스크립트 -->
+    <script>
+       document.addEventListener("DOMContentLoaded", function () {
+        let rawData;
+        try {
+          rawData = JSON.parse(`{{ results_json|escapejs }}`);
+        } catch (e) {
+          alert("📛 예측 결과를 불러오는 중 오류가 발생했습니다.");
+          console.error(e);
+          return;
+        }
+
+        function convertToCSV(data) {
+          const headers = Object.keys(data[0]);
+          const rows = data.map(row => headers.map(h => `"${row[h] ?? ''}"`).join(','));
+          return [headers.join(','), ...rows].join('\n');
+        }
+
+        function downloadCSV(csvContent, filename) {
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+
+        function downloadRiskOnly() {
+          const riskOnly = rawData.filter(row => row['예측결과'] === '가정폭력 위험이 있습니다');
+          if (riskOnly.length === 0) {
+            alert("⚠️ 위험 아동 데이터가 없습니다.");
+            return;
+          }
+          const csv = convertToCSV(riskOnly);
+          downloadCSV(csv, "위험_아동_예측결과.csv");
+        }
+
+        document.getElementById("download-btn").addEventListener("click", downloadRiskOnly);
+      });
+    </script>
+  {% endif %}
+</div>
+{% endblock %}

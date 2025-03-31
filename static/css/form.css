@@ -1,0 +1,76 @@
+body {
+  font-family: 'Pretendard', sans-serif;
+  background-color: #f8f9fa;
+  margin: 100px ;
+  padding: 0;
+}
+
+.container {
+  max-width: 600px;
+  margin: 10px auto;
+  padding: 2rem 5rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 2rem;
+}
+
+.prediction-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+
+label {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+}
+
+
+/* ✅ 모든 필드의 길이를 통일: 절반 폭 */
+input[type="text"],
+input[type="number"],
+select {
+  width: 50%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+button[type="submit"] {
+  align-self: center;
+  padding: 0.7rem 1.5rem;
+  background-color: #4169e1;
+  color: white;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button[type="submit"]:hover {
+  background-color: #274db8;
+}
+
+.result-box,
+.accuracy-box {
+  margin-top: 2rem;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
